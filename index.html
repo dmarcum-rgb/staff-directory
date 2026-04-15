@@ -137,9 +137,19 @@
         import { getFirestore, collection, onSnapshot, doc, addDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
+        // ==========================================
+        // CONFIGURATION: Using dynamic check for environment vs live project
+        // ==========================================
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config) 
-            : { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+            : { 
+                apiKey: "AIzaSyC9MmOoe1i3Zcjg-6-49XykR06pmFtimXU", 
+                authDomain: "staff-directory-895a8.firebaseapp.com", 
+                projectId: "staff-directory-895a8", 
+                storageBucket: "staff-directory-895a8.firebasestorage.app", 
+                messagingSenderId: "282683702577", 
+                appId: "1:282683702577:web:d9dd431b4012bb907b0410" 
+            };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -166,12 +176,19 @@
 
         async function signIn() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                // If in the preview environment, prioritize the provided custom token
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && typeof __firebase_config !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
+                    // Fallback to anonymous sign-in (must be enabled in Firebase Console)
                     await signInAnonymously(auth);
                 }
-            } catch (err) { console.error("Auth failed:", err); }
+            } catch (err) { 
+                console.error("Auth failed:", err);
+                if (err.code === 'auth/configuration-not-found') {
+                    console.error("FIX: Enable 'Anonymous' authentication in your Firebase Console.");
+                }
+            }
         }
 
         function startFirestoreSync() {
