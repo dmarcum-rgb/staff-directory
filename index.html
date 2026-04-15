@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamDirectory | Staff Hub</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for professional visuals -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Smooth transitions for cards */
+        .employee-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
+
+    <div id="app">
+        <!-- Navigation Bar -->
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
+                        <i data-lucide="building-2" class="text-white w-6 h-6"></i>
+                    </div>
+                    <span class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                        TeamDirectory
+                    </span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button id="toggleAdmin" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 border border-transparent active:scale-95">
+                        <i data-lucide="settings-2" class="w-4 h-4"></i>
+                        <span id="adminText">Manage</span>
+                    </button>
+                    <button id="addBtn" class="hidden bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-md transition-all active:scale-95">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Search & Filter Controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-10">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Search by name, role, or email..."
+                        class="w-full pl-12 pr-4 py-4 bg-white border-0 ring-1 ring-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm text-lg"
+                    >
+                </div>
+                <div id="deptFilters" class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                    <!-- Department pills will be injected here -->
+                </div>
+            </div>
+
+            <!-- Employee Grid -->
+            <div id="employeeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <!-- Employee cards will be injected here -->
+            </div>
+
+            <!-- Loading & Empty States -->
+            <div id="loadingState" class="text-center py-24">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                <p class="mt-4 text-slate-500 font-medium">Syncing directory...</p>
+            </div>
+
+            <div id="emptyState" class="hidden text-center py-24 bg-white rounded-3xl ring-1 ring-slate-200 shadow-sm">
+                <div class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="users" class="text-slate-200 w-10 h-10"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">No colleagues found</h3>
+                <p class="text-slate-500 max-w-xs mx-auto mt-2">Try adjusting your search or filters to see more results.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Add/Edit Form -->
+    <div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+        <div class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-xl font-extrabold text-slate-900">Add Team Member</h2>
+                <button id="closeModal" class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <form id="addForm" class="p-8 space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">Full Name</label>
+                        <input required id="fName" placeholder="e.g. Jane Smith" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">Job Title</label>
+                        <input required id="fRole" placeholder="e.g. Designer" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Department</label>
+                    <select id="fDept" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
+                        <option>Engineering</option><option>Design</option><option>Marketing</option>
+                        <option>Sales</option><option>Product</option><option>HR</option><option>Operations</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Work Email</label>
+                    <input required type="email" id="fEmail" placeholder="jane@company.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Phone (Optional)</label>
+                    <input id="fPhone" placeholder="+1 (555) 000-0000" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full mt-4 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98]">
+                    Create Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Employee Detail View -->
+    <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+        <!-- Content will be injected dynamically -->
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'staff-directory-v1';
+
+        let employees = [];
+        let isAdmin = false;
+        let activeDept = 'All';
+        let currentUser = null;
+        let unsubscribeSnapshot = null;
+
+        async function init() {
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user) {
+                    startFirestoreSync();
+                } else {
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    signIn();
+                }
+            });
+        }
+
+        async function signIn() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) { console.error("Auth failed:", err); }
+        }
+
+        function startFirestoreSync() {
+            if (!currentUser) return;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'employees');
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            unsubscribeSnapshot = onSnapshot(colRef, (snapshot) => {
+                employees = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                document.getElementById('loadingState').classList.add('hidden');
+                renderFilters();
+                renderGrid();
+            }, (error) => { console.error("Database connection error:", error); });
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('employeeGrid');
+            const searchInput = document.getElementById('searchInput');
+            const search = (searchInput ? searchInput.value : "").toLowerCase();
+            const filtered = employees.filter(e => {
+                const matchSearch = (e.name?.toLowerCase().includes(search) || e.role?.toLowerCase().includes(search) || e.email?.toLowerCase().includes(search));
+                return matchSearch && (activeDept === 'All' || e.department === activeDept);
+            });
+            grid.innerHTML = filtered.map(e => `
+                <div class="employee-card bg-white rounded-3xl ring-1 ring-slate-200 p-6 hover:shadow-2xl hover:-translate-y-1 cursor-pointer group relative" onclick="window.showDetails('${e.id}')">
+                    ${isAdmin ? `<button onclick="window.deleteEmp('${e.id}', event)" class="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all z-10"><i data-lucide="trash-2" class="w-5 h-5"></i></button>` : ''}
+                    <div class="flex flex-col items-center text-center">
+                        <img src="${e.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}&background=random&bold=true`}" class="w-28 h-28 rounded-[2rem] object-cover ring-8 ring-slate-50 group-hover:ring-blue-50 transition-all shadow-sm mb-6">
+                        <h3 class="text-xl font-black text-slate-900 leading-tight mb-1">${e.name}</h3>
+                        <p class="text-blue-600 font-bold text-sm mb-4">${e.role}</p>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6"><i data-lucide="building-2" class="w-3 h-3"></i> ${e.department}</span>
+                        <div class="w-full border-t border-slate-50 pt-5 mt-auto flex items-center justify-center gap-2 text-slate-400 group-hover:text-blue-600 transition-colors"><i data-lucide="mail" class="w-4 h-4"></i><span class="text-sm font-medium truncate max-w-[180px]">${e.email}</span></div>
+                    </div>
+                </div>`).join('');
+            if (isAdmin) {
+                grid.innerHTML += `<button onclick="document.getElementById('addModal').classList.remove('hidden')" class="border-4 border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center gap-4 text-slate-300 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 transition-all min-h-[320px]"><div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center"><i data-lucide="plus" class="w-8 h-8"></i></div><span class="text-lg font-bold">Add New Member</span></button>`;
+            }
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState) emptyState.classList.toggle('hidden', filtered.length > 0 || isAdmin);
+            lucide.createIcons();
+        }
+
+        function renderFilters() {
+            const depts = ['All', ...new Set(employees.map(e => e.department))].sort();
+            const container = document.getElementById('deptFilters');
+            if (!container) return;
+            container.innerHTML = depts.map(d => `<button onclick="window.setDept('${d}')" class="px-6 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all ${activeDept === d ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:ring-blue-300'}">${d}</button>`).join('');
+        }
+
+        window.setDept = (d) => { activeDept = d; renderFilters(); renderGrid(); };
+        window.deleteEmp = async (id, e) => {
+            e.stopPropagation();
+            if (!currentUser) return;
+            if (confirm('Are you sure you want to remove this profile?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'employees', id));
+        };
+
+        window.showDetails = (id) => {
+            const e = employees.find(x => x.id === id);
+            const modal = document.getElementById('detailModal');
+            modal.innerHTML = `<div class="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200"><div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 relative"><button onclick="document.getElementById('detailModal').classList.add('hidden')" class="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button></div><div class="px-10 pb-12 text-center -mt-16"><img src="${e.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}&background=random&bold=true`}" class="w-32 h-32 rounded-[2.5rem] border-[8px] border-white mx-auto shadow-2xl object-cover"><h2 class="mt-6 text-3xl font-black text-slate-900 tracking-tight">${e.name}</h2><p class="text-blue-600 font-bold text-lg">${e.role}</p><div class="mt-10 space-y-4"><div class="p-4 bg-slate-50 rounded-2xl flex items-center gap-4 text-left border border-slate-100 hover:bg-blue-50 transition-colors cursor-pointer" onclick="window.location.href='mailto:${e.email}'"><div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm"><i data-lucide="mail"></i></div><div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Email Address</p><p class="font-bold text-slate-900">${e.email}</p></div></div><div class="p-4 bg-slate-50 rounded-2xl flex items-center gap-4 text-left border border-slate-100"><div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-green-600 shadow-sm"><i data-lucide="phone"></i></div><div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Phone Number</p><p class="font-bold text-slate-900">${e.phone || 'Not provided'}</p></div></div></div><button onclick="window.location.href='mailto:${e.email}'" class="w-full mt-10 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl transition-all active:scale-[0.98]">Send Message</button></div></div>`;
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        document.getElementById('toggleAdmin').onclick = () => {
+            isAdmin = !isAdmin;
+            const btn = document.getElementById('toggleAdmin');
+            document.getElementById('adminText').innerText = isAdmin ? 'View Mode' : 'Manage';
+            btn.classList.toggle('bg-slate-100'); btn.classList.toggle('bg-amber-100');
+            btn.classList.toggle('text-slate-600'); btn.classList.toggle('text-amber-700');
+            document.getElementById('addBtn').classList.toggle('hidden');
+            renderGrid();
+        };
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.oninput = renderGrid;
+        document.getElementById('closeModal').onclick = () => document.getElementById('addModal').classList.add('hidden');
+        document.getElementById('addForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const data = { name: document.getElementById('fName').value, role: document.getElementById('fRole').value, department: document.getElementById('fDept').value, email: document.getElementById('fEmail').value, phone: document.getElementById('fPhone').value, createdAt: new Date().toISOString() };
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'employees'), data);
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('addForm').reset();
+        };
+        init();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
