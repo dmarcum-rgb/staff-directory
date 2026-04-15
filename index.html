@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeamDirectory | Staff Hub</title>
+    <title>TeamDirectory AI | Staff Hub</title>
     <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons for professional visuals -->
@@ -14,9 +14,16 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Smooth transitions for cards */
         .employee-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .ai-loading {
+            animation: pulse-soft 2s infinite;
         }
     </style>
 </head>
@@ -28,11 +35,13 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
                 <div class="flex items-center gap-3">
                     <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
-                        <i data-lucide="building-2" class="text-white w-6 h-6"></i>
+                        <i data-lucide="sparkles" class="text-white w-6 h-6"></i>
                     </div>
-                    <span class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                        TeamDirectory
-                    </span>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-extrabold tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                            TeamDirectory <span class="text-xs font-black bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded ml-1">AI</span>
+                        </span>
+                    </div>
                 </div>
                 
                 <div class="flex items-center gap-2">
@@ -49,15 +58,21 @@
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Search & Filter Controls -->
-            <div class="flex flex-col md:flex-row gap-4 mb-10">
-                <div class="relative flex-1">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                    <input 
-                        type="text" 
-                        id="searchInput"
-                        placeholder="Search by name, role, or email..."
-                        class="w-full pl-12 pr-4 py-4 bg-white border-0 ring-1 ring-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm text-lg"
-                    >
+            <div class="flex flex-col gap-4 mb-10">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Find by name, role... or ask AI: 'Who can help with design?'"
+                            class="w-full pl-12 pr-4 py-4 bg-white border-0 ring-1 ring-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm text-lg"
+                        >
+                        <button id="aiSearchBtn" class="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-all flex items-center gap-2">
+                            <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+                            Smart Search
+                        </button>
+                    </div>
                 </div>
                 <div id="deptFilters" class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
                     <!-- Department pills will be injected here -->
@@ -80,7 +95,7 @@
                     <i data-lucide="users" class="text-slate-200 w-10 h-10"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-slate-900">No colleagues found</h3>
-                <p class="text-slate-500 max-w-xs mx-auto mt-2">Try adjusting your search or filters to see more results.</p>
+                <p id="emptyMessage" class="text-slate-500 max-w-xs mx-auto mt-2">Try adjusting your search or filters to see more results.</p>
             </div>
         </main>
     </div>
@@ -101,7 +116,10 @@
                         <input required id="fName" placeholder="e.g. Jane Smith" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">Job Title</label>
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-500 uppercase ml-1">Job Title</label>
+                            <button type="button" id="suggestRoleBtn" class="text-[10px] font-bold text-blue-600 hover:underline">AI Suggest</button>
+                        </div>
                         <input required id="fRole" placeholder="e.g. Designer" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
@@ -117,8 +135,8 @@
                     <input required type="email" id="fEmail" placeholder="jane@company.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Phone (Optional)</label>
-                    <input id="fPhone" placeholder="+1 (555) 000-0000" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Bio / Skills (AI can summarize this)</label>
+                    <textarea id="fBio" rows="3" placeholder="List skills or a short bio..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
                 <button type="submit" class="w-full mt-4 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98]">
                     Create Profile
@@ -138,29 +156,55 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // ==========================================
-        // CONFIGURATION: Using dynamic check for environment vs live project
+        // CONFIGURATION: Using your actual project keys
         // ==========================================
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : { 
-                apiKey: "AIzaSyC9MmOoe1i3Zcjg-6-49XykR06pmFtimXU", 
-                authDomain: "staff-directory-895a8.firebaseapp.com", 
-                projectId: "staff-directory-895a8", 
-                storageBucket: "staff-directory-895a8.firebasestorage.app", 
-                messagingSenderId: "282683702577", 
-                appId: "1:282683702577:web:d9dd431b4012bb907b0410" 
-            };
+        const firebaseConfig = { 
+            apiKey: "AIzaSyC9MmOoe1i3Zcjg-6-49XykR06pmFtimXU", 
+            authDomain: "staff-directory-895a8.firebaseapp.com", 
+            projectId: "staff-directory-895a8", 
+            storageBucket: "staff-directory-895a8.firebasestorage.app", 
+            messagingSenderId: "282683702577", 
+            appId: "1:282683702577:web:d9dd431b4012bb907b0410",
+            measurementId: "G-6GYGVLFNY"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'staff-directory-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'staff-directory-895a8';
 
+        // Gemini API Helpers
+        const apiKey = ""; // Provided by the environment
+
+        async function callGemini(prompt, systemInstruction = "You are a helpful office assistant.") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI response failed.";
+                } catch (e) {
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+            }
+            return "Connection error after multiple retries.";
+        }
+
+        // State Management
         let employees = [];
         let isAdmin = false;
         let activeDept = 'All';
         let currentUser = null;
         let unsubscribeSnapshot = null;
+        let aiFilteredIds = null;
 
         async function init() {
             onAuthStateChanged(auth, (user) => {
@@ -176,19 +220,12 @@
 
         async function signIn() {
             try {
-                // If in the preview environment, prioritize the provided custom token
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && typeof __firebase_config !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    // Fallback to anonymous sign-in (must be enabled in Firebase Console)
                     await signInAnonymously(auth);
                 }
-            } catch (err) { 
-                console.error("Auth failed:", err);
-                if (err.code === 'auth/configuration-not-found') {
-                    console.error("FIX: Enable 'Anonymous' authentication in your Firebase Console.");
-                }
-            }
+            } catch (err) { console.error("Auth failed:", err); }
         }
 
         function startFirestoreSync() {
@@ -207,10 +244,19 @@
             const grid = document.getElementById('employeeGrid');
             const searchInput = document.getElementById('searchInput');
             const search = (searchInput ? searchInput.value : "").toLowerCase();
+            
             const filtered = employees.filter(e => {
-                const matchSearch = (e.name?.toLowerCase().includes(search) || e.role?.toLowerCase().includes(search) || e.email?.toLowerCase().includes(search));
-                return matchSearch && (activeDept === 'All' || e.department === activeDept);
+                if (aiFilteredIds && !aiFilteredIds.includes(e.id)) return false;
+                if (!aiFilteredIds) {
+                    const matchSearch = (e.name?.toLowerCase().includes(search) || 
+                                         e.role?.toLowerCase().includes(search) || 
+                                         e.email?.toLowerCase().includes(search));
+                    const matchDept = activeDept === 'All' || e.department === activeDept;
+                    return matchSearch && matchDept;
+                }
+                return true;
             });
+
             grid.innerHTML = filtered.map(e => `
                 <div class="employee-card bg-white rounded-3xl ring-1 ring-slate-200 p-6 hover:shadow-2xl hover:-translate-y-1 cursor-pointer group relative" onclick="window.showDetails('${e.id}')">
                     ${isAdmin ? `<button onclick="window.deleteEmp('${e.id}', event)" class="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all z-10"><i data-lucide="trash-2" class="w-5 h-5"></i></button>` : ''}
@@ -222,9 +268,11 @@
                         <div class="w-full border-t border-slate-50 pt-5 mt-auto flex items-center justify-center gap-2 text-slate-400 group-hover:text-blue-600 transition-colors"><i data-lucide="mail" class="w-4 h-4"></i><span class="text-sm font-medium truncate max-w-[180px]">${e.email}</span></div>
                     </div>
                 </div>`).join('');
-            if (isAdmin) {
+            
+            if (isAdmin && !aiFilteredIds) {
                 grid.innerHTML += `<button onclick="document.getElementById('addModal').classList.remove('hidden')" class="border-4 border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center gap-4 text-slate-300 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 transition-all min-h-[320px]"><div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center"><i data-lucide="plus" class="w-8 h-8"></i></div><span class="text-lg font-bold">Add New Member</span></button>`;
             }
+            
             const emptyState = document.getElementById('emptyState');
             if (emptyState) emptyState.classList.toggle('hidden', filtered.length > 0 || isAdmin);
             lucide.createIcons();
@@ -237,19 +285,103 @@
             container.innerHTML = depts.map(d => `<button onclick="window.setDept('${d}')" class="px-6 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all ${activeDept === d ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:ring-blue-300'}">${d}</button>`).join('');
         }
 
-        window.setDept = (d) => { activeDept = d; renderFilters(); renderGrid(); };
+        window.setDept = (d) => { aiFilteredIds = null; activeDept = d; renderFilters(); renderGrid(); };
         window.deleteEmp = async (id, e) => {
             e.stopPropagation();
             if (!currentUser) return;
             if (confirm('Are you sure you want to remove this profile?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'employees', id));
         };
 
+        window.generateBio = async (id) => {
+            const btn = document.getElementById('aiBioBtn');
+            const bioContainer = document.getElementById('aiBioResult');
+            const emp = employees.find(x => x.id === id);
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Writing...';
+            lucide.createIcons();
+            const prompt = `Write a professional 2-sentence bio for ${emp.name}, who works as a ${emp.role} in the ${emp.department} department. Use a warm, professional tone. Input bio info: ${emp.bio || 'None provided'}`;
+            const bio = await callGemini(prompt);
+            bioContainer.innerHTML = `<div class="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-slate-700 text-sm leading-relaxed italic animate-in fade-in duration-500">${bio}</div>`;
+            btn.classList.add('hidden');
+            lucide.createIcons();
+        };
+
         window.showDetails = (id) => {
             const e = employees.find(x => x.id === id);
             const modal = document.getElementById('detailModal');
-            modal.innerHTML = `<div class="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200"><div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 relative"><button onclick="document.getElementById('detailModal').classList.add('hidden')" class="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button></div><div class="px-10 pb-12 text-center -mt-16"><img src="${e.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}&background=random&bold=true`}" class="w-32 h-32 rounded-[2.5rem] border-[8px] border-white mx-auto shadow-2xl object-cover"><h2 class="mt-6 text-3xl font-black text-slate-900 tracking-tight">${e.name}</h2><p class="text-blue-600 font-bold text-lg">${e.role}</p><div class="mt-10 space-y-4"><div class="p-4 bg-slate-50 rounded-2xl flex items-center gap-4 text-left border border-slate-100 hover:bg-blue-50 transition-colors cursor-pointer" onclick="window.location.href='mailto:${e.email}'"><div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm"><i data-lucide="mail"></i></div><div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Email Address</p><p class="font-bold text-slate-900">${e.email}</p></div></div><div class="p-4 bg-slate-50 rounded-2xl flex items-center gap-4 text-left border border-slate-100"><div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-green-600 shadow-sm"><i data-lucide="phone"></i></div><div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Phone Number</p><p class="font-bold text-slate-900">${e.phone || 'Not provided'}</p></div></div></div><button onclick="window.location.href='mailto:${e.email}'" class="w-full mt-10 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl transition-all active:scale-[0.98]">Send Message</button></div></div>`;
+            modal.innerHTML = `
+                <div class="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200">
+                    <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 relative">
+                        <button onclick="document.getElementById('detailModal').classList.add('hidden')" class="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <div class="px-10 pb-12 text-center -mt-16">
+                        <img src="${e.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}&background=random&bold=true`}" class="w-32 h-32 rounded-[2.5rem] border-[8px] border-white mx-auto shadow-2xl object-cover">
+                        <h2 class="mt-6 text-3xl font-black text-slate-900 tracking-tight">${e.name}</h2>
+                        <p class="text-blue-600 font-bold text-lg">${e.role}</p>
+                        <div id="aiBioResult"></div>
+                        <button id="aiBioBtn" onclick="window.generateBio('${e.id}')" class="mt-4 flex items-center justify-center gap-2 w-full py-2 px-4 border border-blue-200 text-blue-600 text-xs font-bold rounded-xl hover:bg-blue-50 transition-all">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Generate AI Intro
+                        </button>
+                        <div class="mt-8 space-y-4">
+                            <div class="p-4 bg-slate-50 rounded-2xl flex items-center gap-4 text-left border border-slate-100">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm"><i data-lucide="mail"></i></div>
+                                <div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Email Address</p><p class="font-bold text-slate-900">${e.email}</p></div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-2xl flex items-center gap-4 text-left border border-slate-100">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-green-600 shadow-sm"><i data-lucide="phone"></i></div>
+                                <div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Phone Number</p><p class="font-bold text-slate-900">${e.phone || 'Not provided'}</p></div>
+                            </div>
+                        </div>
+                        <button onclick="window.location.href='mailto:${e.email}'" class="w-full mt-10 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl transition-all active:scale-[0.98]">Send Message</button>
+                    </div>
+                </div>`;
             modal.classList.remove('hidden');
             lucide.createIcons();
+        };
+
+        document.getElementById('aiSearchBtn').onclick = async () => {
+            const queryText = document.getElementById('searchInput').value;
+            if (!queryText || queryText.length < 3) return;
+            const btn = document.getElementById('aiSearchBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Thinking...';
+            lucide.createIcons();
+            const staffList = employees.map(e => `${e.id}: ${e.name} (${e.role}, ${e.department}). Skills/Bio: ${e.bio || 'None'}`).join('\n');
+            const prompt = `Based on the following staff list, identify the IDs of employees who best match the query: "${queryText}". Return ONLY a comma-separated list of IDs. If no one matches, return "none".\n\nStaff:\n${staffList}`;
+            const result = await callGemini(prompt, "You are a recruitment assistant. You only output a comma separated list of IDs.");
+            if (result.toLowerCase().includes('none')) {
+                aiFilteredIds = [];
+                document.getElementById('emptyMessage').innerText = `AI couldn't find anyone matching "${queryText}".`;
+            } else {
+                aiFilteredIds = result.split(',').map(id => id.trim());
+            }
+            renderGrid();
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="x" class="w-3.5 h-3.5"></i> Clear AI Search';
+            btn.classList.replace('bg-slate-900', 'bg-red-500');
+            btn.onclick = () => {
+                aiFilteredIds = null;
+                document.getElementById('searchInput').value = "";
+                renderGrid();
+                btn.innerHTML = '<i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Smart Search';
+                btn.classList.replace('bg-red-500', 'bg-slate-900');
+                btn.onclick = window.aiSearchInit;
+                lucide.createIcons();
+            };
+            lucide.createIcons();
+        };
+        window.aiSearchInit = document.getElementById('aiSearchBtn').onclick;
+
+        document.getElementById('suggestRoleBtn').onclick = async () => {
+            const name = document.getElementById('fName').value;
+            const dept = document.getElementById('fDept').value;
+            if (!name) return;
+            const btn = document.getElementById('suggestRoleBtn');
+            btn.innerText = "Suggesting...";
+            const prompt = `Based on the name "${name}" and the department "${dept}", suggest a creative and professional job title. Return ONLY the title.`;
+            const suggestion = await callGemini(prompt);
+            document.getElementById('fRole').value = suggestion.replace(/"/g, '');
+            btn.innerText = "AI Suggest";
         };
 
         document.getElementById('toggleAdmin').onclick = () => {
@@ -263,12 +395,17 @@
         };
 
         const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.oninput = renderGrid;
+        if (searchInput) searchInput.oninput = () => { if (!aiFilteredIds) renderGrid(); };
         document.getElementById('closeModal').onclick = () => document.getElementById('addModal').classList.add('hidden');
         document.getElementById('addForm').onsubmit = async (e) => {
             e.preventDefault();
             if (!currentUser) return;
-            const data = { name: document.getElementById('fName').value, role: document.getElementById('fRole').value, department: document.getElementById('fDept').value, email: document.getElementById('fEmail').value, phone: document.getElementById('fPhone').value, createdAt: new Date().toISOString() };
+            const data = { 
+                name: document.getElementById('fName').value, role: document.getElementById('fRole').value, 
+                department: document.getElementById('fDept').value, email: document.getElementById('fEmail').value, 
+                phone: document.getElementById('fPhone').value, bio: document.getElementById('fBio').value, 
+                createdAt: new Date().toISOString() 
+            };
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'employees'), data);
             document.getElementById('addModal').classList.add('hidden');
             document.getElementById('addForm').reset();
